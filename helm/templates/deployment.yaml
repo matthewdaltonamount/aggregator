@@ -1,0 +1,57 @@
+{{- $name := include "aggregator.name" . -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ $name }}
+    helm.sh/chart: {{ include "aggregator.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  minReadySeconds: {{ .Values.minReadySeconds }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ $name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ $name }}-service-account
+      containers:
+        - name: {{ $name }}
+          args:
+          {{- with .Values.args }}
+          {{ toYaml . | indent 6 }}
+          {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              memory: {{ .Values.memory }}
+              cpu: {{ .Values.cpu }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.containerPort }}
+              protocol: TCP
+          livenessProbe:
+            initialDelaySeconds:  {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            httpGet:
+              path: /heartbeat
+              port: http
+          readinessProbe:
+            initialDelaySeconds:  {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            httpGet:
+              path: /heartbeat
+              port: http
+          envFrom:
+            - secretRef:
+                name: "{{ .Values.vault.secret_sha }}"

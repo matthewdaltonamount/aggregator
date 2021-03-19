@@ -1,0 +1,42 @@
+# Default values for aggregator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+nameOverride: "aggregator"
+env: default
+image:
+  repository: docker.io/aggregator
+  tag: default
+vault:
+  secret_sha: default
+
+replicaCount: 1
+
+cpu: '2'
+memory: "2Gi"
+minReadySeconds: 30
+revisionHistoryLimit: 1
+
+containerPort: 3000
+args:
+  - "/main"
+
+livenessProbe:
+  initialDelaySeconds: 90
+  periodSeconds: 5
+readinessProbe:
+  initialDelaySeconds: 90
+  periodSeconds: 5
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  internal:
+    annotations:
+      traefik.ingress.kubernetes.io/preserve-host: "false"
+    path: /
+    hosts:
+      - hostname: default
+        path: /
+        servicePort: http

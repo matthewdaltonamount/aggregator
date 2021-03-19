@@ -1,0 +1,20 @@
+{{- $name := include "aggregator.name" . -}}
+{{- $chart := include "aggregator.chart" . -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ $name }}-service
+    helm.sh/chart: {{ $chart }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ $name }}
